@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reverse Clicker Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    #moneyDisplay {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: #00ff99;
+      z-index: 1000;
+    }
+
+    #timerDisplay {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: #00ccff;
+      z-index: 1000;
+    }
+
+    main {
+      text-align: center;
+      padding-top: 100px;
+    }
+
+    #counter {
+      font-size: 36px;
+      margin: 10px 0;
+    }
+
+    #clickBtn {
+      font-size: 24px;
+      padding: 15px 40px;
+      background-color: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #clickBtn:hover:enabled {
+      background-color: #cc0000;
+    }
+
+    #clickBtn:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+
+    #shop {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      width: 320px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      color: white;
+      text-align: left;
+    }
+
+    #shop h2 {
+      font-size: 20px;
+      margin-top: 0;
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+    }
+
+    .shop-item {
+      margin: 15px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .shop-item div.info {
+      flex-grow: 1;
+    }
+
+    .shop-item button {
+      background-color: #00cc66;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 10px;
+      flex-shrink: 0;
+    }
+
+    .shop-item button:hover {
+      background-color: #00994d;
+    }
+
+    .shop-item button:disabled {
+      background-color: #444;
+      cursor: not-allowed;
+    }
+
+    .shop-item p {
+      margin: 5px 0 0;
+      font-size: 14px;
+    }
+
+    .count {
+      background: #333;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 14px;
+      margin-left: 8px;
+      min-width: 20px;
+      text-align: center;
+      display: inline-block;
+    }
+
+    /* Win screen styling */
+    #winScreen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      color: #00ff99;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      z-index: 2000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #winScreen.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #winScreen button {
+      margin-top: 30px;
+      padding: 12px 28px;
+      font-size: 24px;
+      background-color: #00cc66;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
+      transition: background-color 0.3s;
+    }
+
+    #winScreen button:hover {
+      background-color: #00994d;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="moneyDisplay">Money: 0</div>
+  <div id="timerDisplay">Time: 00:00</div>
+
+  <main>
+    <h1>Reverse Clicker</h1>
+    <div id="counter">Resources: 1,000,000</div>
+    <button id="clickBtn">Click to Remove 1 Resource & Gain 1 Money</button>
+  </main>
+
+  <div id="shop">
+    <h2>Shop</h2>
+
+    <div class="shop-item">
+      <div class="info">
+        <strong>Auto Clicker</strong>
+        <span class="count" id="autoClickerCount">0</span>
+        <p>Cost: 50 money</p>
+      </div>
+      <button id="buyAutoClicker">Buy</button>
+    </div>
+
+    <div class="shop-item">
+      <div class="info">
+        <strong>Mega Clicker</strong>
+        <span class="count" id="megaClickerCount">0</span>
+        <p>Cost: 250 money</p>
+      </div>
+      <button id="buyMegaClicker">Buy</button>
+    </div>
+
+    <div class="shop-item">
+      <div class="info">
+        <strong>Ultra Clicker</strong>
+        <span class="count" id="ultraClickerCount">0</span>
+        <p>Cost: 1000 money</p>
+      </div>
+      <button id="buyUltraClicker">Buy</button>
+    </div>
+
+  </div>
+
+  <!-- Win Screen Overlay -->
+  <div id="winScreen">
+    You Win! All resources removed!
+    <button id="playAgainBtn">Play Again</button>
+  </div>
+
+  <script>
+    let resources = 1000000;
+    let money = 0;
+
+    // Counts of upgrades
+    let autoClickers = 0;
+    let megaClickers = 0;
+    let ultraClickers = 0;
+
+    // Timer variable
+    let secondsElapsed = 0;
+    let timerInterval;
+
+    const counter = document.getElementById('counter');
+    const moneyDisplay = document.getElementById('moneyDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const clickButton = document.getElementById('clickBtn');
+
+    const buyAutoClickerBtn = document.getElementById('buyAutoClicker');
+    const autoClickerCount = document.getElementById('autoClickerCount');
+
+    const buyMegaClickerBtn = document.getElementById('buyMegaClicker');
+    const megaClickerCount = document.getElementById('megaClickerCount');
+
+    const buyUltraClickerBtn = document.getElementById('buyUltraClicker');
+    const ultraClickerCount = document.getElementById('ultraClickerCount');
+
+    const winScreen = document.getElementById('winScreen');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+
+    function updateUI() {
+      counter.textContent = `Resources: ${resources.toLocaleString()}`;
+      moneyDisplay.textContent = `Money: ${money.toLocaleString()}`;
+
+      const gameWon = resources <= 0;
+
+      clickButton.disabled = gameWon;
+
+      buyAutoClickerBtn.disabled = money < 50 || gameWon;
+      buyMegaClickerBtn.disabled = money < 250 || gameWon;
+      buyUltraClickerBtn.disabled = money < 1000 || gameWon;
+
+      autoClickerCount.textContent = autoClickers;
+      megaClickerCount.textContent = megaClickers;
+      ultraClickerCount.textContent = ultraClickers;
+
+      if (gameWon) {
+        winScreen.classList.add('visible');
+        clearInterval(timerInterval);  // Stop the timer when game is won
+      }
+    }
+
+    clickButton.addEventListener('click', () => {
+      if (resources > 0) {
+        resources--;
+        money++;
+        updateUI();
+      }
+    });
+
+    buyAutoClickerBtn.addEventListener('click', () => {
+      if (money >= 50) {
+        money -= 50;
+        autoClickers++;
+        updateUI();
+      }
+    });
+
+    buyMegaClickerBtn.addEventListener('click', () => {
+      if (money >= 250) {
+        money -= 250;
+        megaClickers++;
+        updateUI();
+      }
+    });
+
+    buyUltraClickerBtn.addEventListener('click', () => {
+      if (money >= 1000) {
+        money -= 1000;
+        ultraClickers++;
+        updateUI();
+      }
+    });
+
+    // Interval runs every second to apply auto clickers, mega clickers, and ultra clickers
+    setInterval(() => {
+      if (resources > 0) {
+        let totalRemove = autoClickers * 1 + megaClickers * 10 + ultraClickers * 50;
+        if (totalRemove > resources) totalRemove = resources;
+
+        resources -= totalRemove;
+        money += totalRemove;
+
+        updateUI();
+      }
+    }, 1000);
+
+    // Timer function: counts seconds elapsed and formats as MM:SS
+    function startTimer() {
+      secondsElapsed = 0;
+      timerDisplay.textContent = `Time: 00:00`;
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        const minutes = Math.floor(secondsElapsed / 60);
+        const seconds = secondsElapsed % 60;
+        // Format minutes and seconds to always be two digits
+        const formattedTime = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+        timerDisplay.textContent = `Time: ${formattedTime}`;
+      }, 1000);
+    }
+
+    playAgainBtn.addEventListener('click', () => {
+      resources = 1000000;
+      money = 0;
+      autoClickers = 0;
+      megaClickers = 0;
+      ultraClickers = 0;
+      winScreen.classList.remove('visible');
+      updateUI();
+      startTimer();
+    });
+
+    updateUI();
+    startTimer();
+  </script>
+
+</body>
+</html>
